@@ -83,6 +83,8 @@ nav .btn{min-height:42px;padding:0 18px}
 .m-hero{position:relative;height:330px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:22px 20px;color:#fff}
 .m-sea{position:absolute;inset:0;background:radial-gradient(120% 80% at 30% 30%,#c9dfe2,transparent 60%),radial-gradient(100% 90% at 80% 70%,#7fa8b4,transparent 65%),linear-gradient(160deg,#9cbfc6,#e9dcc6)}
 @keyframes sea{to{transform:rotate(360deg) scale(1.1)}}
+.screen .live{position:absolute;top:0;left:0;width:390px;border:0;transform-origin:0 0;pointer-events:none;opacity:0;transition:opacity .6s}
+.screen .live.on{opacity:1}
 .m-hero>.m-sea,.m-hero>.m-vid{position:absolute;inset:0;z-index:0}
 .m-vid{width:100%;height:100%;object-fit:cover}
 .m-hero::after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(30,26,22,.55))}
@@ -416,7 +418,7 @@ textarea.inp{min-height:110px;resize:vertical}
     </div>
     <div class="stage">
       <div class="phone" aria-label="Balázs Lilla kozmetikus weboldala telefonon">
-        <div class="screen"><div class="scroller mini"></div></div>
+        <div class="screen"><iframe class="live" src="lilla-elonezet/index.html" title="Balázs Lilla kozmetikus weboldala" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div>
       </div>
       <a class="live-chip" href="#referencia"><i></i>Élő referencia: balazslillakozmetikus.com</a>
     </div>
@@ -451,7 +453,7 @@ textarea.inp{min-height:110px;resize:vertical}
         <div class="vid missing" id="vid">
           <video src="media/lilla-9x16.mp4" muted loop playsinline autoplay preload="metadata" aria-label="Bemutatóvideó Balázs Lilla weboldaláról"></video>
         </div>
-        <div class="stage" id="vidfb"><div class="phone"><div class="screen"><div class="scroller mini"></div></div></div></div>
+        <div class="stage" id="vidfb"><div class="phone"><div class="screen"><iframe class="live" src="lilla-elonezet/index.html" title="Balázs Lilla kozmetikus weboldala" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div></div>
         <p class="caption">Így látja a vendég a telefonján</p>
       </div>
     </div>
@@ -640,7 +642,30 @@ const miniHTML =
   '</div><div class="m-sec"><div class="m-h">Rólam</div><div class="m-card">Személyre szabott kezelések, prémium Babor termékekkel, nyugodt környezetben.</div>' +
   '<div class="m-card"><b>Általános irányelvek</b><i>Megnyitás →</i></div></div><div style="height:40px"></div>';
 for (const m of document.querySelectorAll(".mini")) m.innerHTML = miniHTML;
-for (const vv of document.querySelectorAll(".m-vid")) { vv.muted = true; vv.play?.().catch(() => {}); }
+/* Lilla élő oldala a telefonképen: kicsinyítve, lassan lefelé görgetve */
+const SLOW = matchMedia("(prefers-reduced-motion: reduce)").matches;
+for (const ifr of document.querySelectorAll(".screen .live")) {
+  const scr = ifr.parentElement;
+  const fit = () => { const s = scr.clientWidth / 390; ifr.style.transform = `scale(${s})`; ifr.style.height = (scr.clientHeight / s) + "px"; };
+  const roFit = new ResizeObserver(fit); roFit.observe(scr); fit();
+  ifr.addEventListener("load", () => {
+    let w; try { w = ifr.contentWindow; w.document.documentElement.style.scrollBehavior = "auto"; } catch (_) { ifr.classList.add("on"); return; }
+    ifr.classList.add("on");
+    if (SLOW) return;
+    let y = 0, last = 0, pauseUntil = performance.now() + 1500;
+    const step = t => {
+      const dt = last ? Math.min(t - last, 64) : 16; last = t;
+      if (t > pauseUntil) {
+        const max = w.document.documentElement.scrollHeight - w.innerHeight;
+        y += dt * 0.03;
+        if (y >= max) { pauseUntil = t + 2000; ifr.classList.remove("on"); setTimeout(() => { y = 0; w.scrollTo(0, 0); ifr.classList.add("on"); }, 700); }
+        else w.scrollTo(0, y);
+      }
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}
 
 $("#feats").innerHTML = FEATS.map(([t,d,ic]) =>
   `<div class="glass feat"><svg viewBox="0 0 32 32" aria-hidden="true">${ic}</svg><h3>${t}</h3><p>${d}</p></div>`).join("");
