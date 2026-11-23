@@ -284,6 +284,10 @@ dialog{background:light-dark(rgba(250,246,240,.82),rgba(30,28,26,.86));backdrop-
 .price-sum{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:4px 12px;padding:16px 18px;margin:0 0 18px;border-radius:18px;background:light-dark(rgba(24,23,22,.9),rgba(250,246,240,.9));color:var(--on-graph)}
 .price-sum b{font-size:26px;letter-spacing:-.02em;white-space:nowrap}.price-sum s{font-size:15px;font-weight:500;opacity:.55}
 .price-sum small{grid-column:1/-1;font-size:13px;opacity:.75;line-height:1.45}
+dialog#consult{border:0;padding:0;width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:hidden;border-radius:30px;color:var(--ink);background:light-dark(rgba(250,246,240,.9),rgba(30,28,26,.92));backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid var(--glass-b)}
+dialog#consult::backdrop{background:rgba(20,18,16,.55);backdrop-filter:blur(4px)}
+#consult .wiz{max-height:calc(100dvh - 24px)}
+@media(max-width:600px){dialog#consult{width:100vw;max-width:100vw;margin:auto 0 0;border-radius:28px 28px 0 0}}
 dialog#order{width:min(620px,calc(100vw - 24px));max-height:min(860px,calc(100dvh - 24px));overflow:hidden;padding:0}
 .wiz{display:flex;flex-direction:column;max-height:min(860px,calc(100dvh - 24px))}
 .w-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:24px 24px 12px}
@@ -558,6 +562,23 @@ textarea.inp{min-height:110px;resize:vertical}
 </footer>
 
 
+<dialog id="consult" aria-labelledby="c-title">
+  <form class="wiz" id="cform" novalidate>
+    <header class="w-head">
+      <div><p class="kick" style="margin:0 0 2px">Ingyenes, kötelezettség nélkül</p><h3 id="c-title">15 perces konzultáció</h3></div>
+      <button class="x" type="button" aria-label="Bezárás" id="c-x">×</button>
+    </header>
+    <div class="w-body" id="c-body">
+      <p class="hint" style="margin-bottom:18px">Adja meg a számát, és a választott időszakban visszahívom. Átbeszéljük, milyen oldalt szeretne, és mennyi idő alatt készülhet el.</p>
+      <div class="q" data-q="cnev"><label for="c-nev">Az Ön neve <span class="req">*</span></label><input class="inp" id="c-nev" autocomplete="name" type="text"><p class="err">Ezt kérem, töltse ki.</p></div>
+      <div class="q" data-q="ctel"><label for="c-tel">Telefonszám <span class="req">*</span></label><input class="inp" id="c-tel" autocomplete="tel" type="tel" placeholder="+36 ..."><p class="err">Adjon meg egy telefonszámot.</p></div>
+      <div class="q"><span class="ql">Mikor hívhatom?</span><div class="chips" id="c-when"><button type="button" class="chip" data-v="Délelőtt" aria-pressed="false">Délelőtt</button><button type="button" class="chip" data-v="Délután" aria-pressed="false">Délután</button><button type="button" class="chip" data-v="Este" aria-pressed="false">Este</button><button type="button" class="chip" data-v="Bármikor" aria-pressed="false">Bármikor</button></div></div>
+      <div class="q"><label for="c-szalon">Szalon neve vagy jelenlegi oldal</label><input class="inp" id="c-szalon" type="text" placeholder="nem kötelező"></div>
+    </div>
+    <footer class="w-foot" id="c-foot"><button class="btn pri" type="submit" id="c-send">Visszahívást kérek</button></footer>
+  </form>
+</dialog>
+
 <dialog id="order" aria-labelledby="w-title">
   <form class="wiz" id="wiz" novalidate>
     <header class="w-head">
@@ -692,8 +713,38 @@ $("#faq").innerHTML = FAQ.map(([q,a],i) => `<details${i===0?" open":""}><summary
 $("#yr").textContent = new Date().getFullYear();
 if (CONFIG.email) $("#mail").innerHTML = ` · <a href="mailto:${CONFIG.email}">${CONFIG.email}</a>`;
 
+const cdlg = $("#consult"), cbody = $("#c-body");
+let cWhen = "";
+$("#c-when").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; cWhen = b.dataset.v; $("#c-when").querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+$("#c-x").addEventListener("click", () => cdlg.close());
+cbody.addEventListener("input", e => e.target.closest(".q")?.classList.remove("bad"));
+cdlg.addEventListener("click", e => { if (e.target === cdlg) cdlg.close(); });
+$("#cform").addEventListener("submit", async e => {
+  e.preventDefault();
+  const nev = $("#c-nev").value.trim(), tel = $("#c-tel").value.trim(), szalon = $("#c-szalon").value.trim();
+  const telOk = tel.replace(/\D/g, "").length >= 8;
+  cbody.querySelector('[data-q="cnev"]').classList.toggle("bad", !nev);
+  cbody.querySelector('[data-q="ctel"]').classList.toggle("bad", !telOk);
+  if (!nev || !telOk) return;
+  const btn = $("#c-send"); btn.disabled = true; btn.textContent = "Küldés…";
+  let ok = false;
+  try {
+    if (CONFIG.formsubmit && CONFIG.email) {
+      const r = await fetch(`https://formsubmit.co/ajax/${CONFIG.email}`, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ _subject: `Konzultációt kér: ${nev}`, _template: "table", _captcha: "false", "Név": nev, "Telefon": tel, "Mikor hívható": cWhen || "nincs megadva", "Szalon / oldal": szalon || "-" }) });
+      const j = await r.json(); ok = String(j.success) === "true";
+    }
+  } catch (_) { ok = false; }
+  $("#c-foot").style.display = "none";
+  cbody.innerHTML = ok
+    ? `<div class="done"><div class="ok">✓</div><h3>Köszönöm, ${esc(nev.split(" ").slice(-1)[0])}!</h3><p>Hamarosan hívom a(z) ${esc(tel)} számon${cWhen && cWhen !== "Bármikor" ? ", " + esc(cWhen.toLowerCase()) : ""}.</p><button class="btn sec" type="button" id="c-close2">Bezárás</button></div>`
+    : `<div class="done"><div class="ok">☎</div><p>Az üzenet most nem ment el. Hívjon nyugodtan közvetlenül, vagy írjon e-mailt.</p><a class="btn gold" href="tel:${CONFIG.phone.replace(/\s/g, "")}">Hívás: ${esc(CONFIG.phone)}</a>${CONFIG.email ? `<a class="btn sec" href="mailto:${CONFIG.email}?subject=${encodeURIComponent("Konzultáció")}&body=${encodeURIComponent(`Név: ${nev}\nTelefon: ${tel}\nMikor hívható: ${cWhen}\nSzalon: ${szalon}`)}">E-mail küldése</a>` : ""}</div>`;
+  $("#c-close2")?.addEventListener("click", () => cdlg.close());
+});
 for (const a of document.querySelectorAll(".js-consult")) {
   if (CONFIG.consultUrl) { a.href = CONFIG.consultUrl; a.target = "_blank"; a.rel = "noopener"; }
+  else a.addEventListener("click", e => { e.preventDefault(); try { cdlg.showModal(); } catch (_) { cdlg.setAttribute("open", ""); } });
+
 }
 
 const vid = $("#vid"), v = vid.querySelector("video");
