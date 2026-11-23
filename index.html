@@ -81,9 +81,11 @@ nav .btn{min-height:42px;padding:0 18px}
 .scroller{animation:scrollsite 22s ease-in-out infinite alternate}
 @keyframes scrollsite{0%,12%{transform:translateY(0)}88%,100%{transform:translateY(calc(-100% + 600px))}}
 .m-hero{position:relative;height:330px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:22px 20px;color:#fff}
-.m-sea{position:absolute;inset:-30%;background:conic-gradient(from 200deg at 40% 60%,#7fa8b4,#c9dfe2,#9cbfc6,#e9dcc6,#7fa8b4);filter:blur(28px);animation:sea 14s linear infinite}
+.m-sea{position:absolute;inset:0;background:radial-gradient(120% 80% at 30% 30%,#c9dfe2,transparent 60%),radial-gradient(100% 90% at 80% 70%,#7fa8b4,transparent 65%),linear-gradient(160deg,#9cbfc6,#e9dcc6)}
 @keyframes sea{to{transform:rotate(360deg) scale(1.1)}}
-.m-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(30,26,22,.55))}
+.m-hero>.m-sea,.m-hero>.m-vid{position:absolute;inset:0;z-index:0}
+.m-vid{width:100%;height:100%;object-fit:cover}
+.m-hero::after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(30,26,22,.55))}
 .m-hero>*{position:relative;z-index:1}
 .m-name{font-family:"Cormorant Garamond",serif;font-size:34px;line-height:1;font-weight:600}
 .m-sub{font-size:11px;opacity:.9;margin:6px 0 14px}
@@ -261,7 +263,7 @@ dialog{background:light-dark(rgba(250,246,240,.82),rgba(30,28,26,.86));backdrop-
  .grid{gap:12px;margin-top:28px}
  .a-card{padding:24px 22px}
  .close{border-radius:26px}
- footer{padding-bottom:110px}
+
  summary{font-size:16px;padding:18px 36px 18px 0}
 }
 @media(max-width:560px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.feat h3{font-size:17px}.feat p{font-size:13.5px}.cta .btn{min-height:52px}}
@@ -552,7 +554,6 @@ textarea.inp{min-height:110px;resize:vertical}
   </div>
 </footer>
 
-<div class="dock glass" id="dock" aria-hidden="true"><div><b id="dock-p"></b>Alap csomag · <span id="dock-t"></span></div><button class="btn pri" type="button" data-plan="alap">Megrendelem</button></div>
 
 <dialog id="order" aria-labelledby="w-title">
   <form class="wiz" id="wiz" novalidate>
@@ -633,12 +634,13 @@ const cross = '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>';
 const clock = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 
 const miniHTML =
-  '<div class="m-hero"><div class="m-sea"></div><div class="m-name">Balázs Lilla</div><div class="m-sub">Kozmetikus · Miskolc</div><div class="m-btn">Időpontfoglalás</div></div>' +
+  '<div class="m-hero"><div class="m-sea"></div><video class="m-vid" src="media/ocean-mini.mp4" poster="media/ocean-mini.jpg" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video><div class="m-name">Balázs Lilla</div><div class="m-sub">Kozmetikus · Miskolc</div><div class="m-btn">Időpontfoglalás</div></div>' +
   '<div class="m-sec"><div class="m-h">Kezelések és árlista</div>' +
   MINI.map(([t,d]) => `<div class="m-card"><div class="m-row"><div><b>${t}</b>${d}</div><span class="m-book">Foglalás</span></div></div>`).join("") +
   '</div><div class="m-sec"><div class="m-h">Rólam</div><div class="m-card">Személyre szabott kezelések, prémium Babor termékekkel, nyugodt környezetben.</div>' +
   '<div class="m-card"><b>Általános irányelvek</b><i>Megnyitás →</i></div></div><div style="height:40px"></div>';
 for (const m of document.querySelectorAll(".mini")) m.innerHTML = miniHTML;
+for (const vv of document.querySelectorAll(".m-vid")) { vv.muted = true; vv.play?.().catch(() => {}); }
 
 $("#feats").innerHTML = FEATS.map(([t,d,ic]) =>
   `<div class="glass feat"><svg viewBox="0 0 32 32" aria-hidden="true">${ic}</svg><h3>${t}</h3><p>${d}</p></div>`).join("");
@@ -671,14 +673,6 @@ for (const a of document.querySelectorAll(".js-consult")) {
 const vid = $("#vid"), v = vid.querySelector("video");
 v.addEventListener("loadeddata", () => { vid.classList.remove("missing"); $("#vidfb").remove(); });
 
-const alap = PLANS.find(p => p.id === "alap"), dock = $("#dock");
-$("#dock-p").textContent = ft(alap.price);
-$("#dock-t").textContent = alap.time;
-const hero = $("#top"), plansEl = $("#csomagok");
-let heroOut = false, plansIn = false;
-const setDock = () => { const on = heroOut && !plansIn; dock.classList.toggle("on", on); dock.setAttribute("aria-hidden", on ? "false" : "true"); };
-const ioDock = new IntersectionObserver(es => { for (const e of es) { if (e.target === hero) heroOut = !e.isIntersecting; else plansIn = e.isIntersecting; } setDock(); });
-ioDock.observe(hero); ioDock.observe(plansEl);
 /* ===== megrendelő kérdőív ===== */
 const PALETTES = [
   ["feher-arany","Fehér és halvány arany",["#ffffff","#e8dcc4","#b8955b"]],
