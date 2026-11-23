@@ -85,6 +85,7 @@ nav .btn{min-height:42px;padding:0 18px}
 @keyframes sea{to{transform:rotate(360deg) scale(1.1)}}
 .screen .live{position:absolute;top:0;left:0;width:390px;border:0;transform-origin:0 0;pointer-events:none;opacity:0;transition:opacity .6s}
 .screen .live.on{opacity:1}
+.screen .shield{position:absolute;inset:0;z-index:2;touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .m-hero>.m-sea,.m-hero>.m-vid{position:absolute;inset:0;z-index:0}
 .m-vid{width:100%;height:100%;object-fit:cover}
 .m-hero::after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(30,26,22,.55))}
@@ -418,7 +419,7 @@ textarea.inp{min-height:110px;resize:vertical}
     </div>
     <div class="stage">
       <div class="phone" aria-label="Balázs Lilla kozmetikus weboldala telefonon">
-        <div class="screen"><iframe class="live" src="lilla-elonezet/index.html" title="Balázs Lilla kozmetikus weboldala" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div>
+        <div class="screen"><iframe class="live" src="lilla-elonezet/index.html" title="Balázs Lilla kozmetikus weboldala" loading="lazy" tabindex="-1" aria-hidden="true" scrolling="no"></iframe><div class="shield" aria-hidden="true"></div></div>
       </div>
       <a class="live-chip" href="#referencia"><i></i>Élő referencia: balazslillakozmetikus.com</a>
     </div>
@@ -453,7 +454,7 @@ textarea.inp{min-height:110px;resize:vertical}
         <div class="vid missing" id="vid">
           <video src="media/lilla-9x16.mp4" muted loop playsinline autoplay preload="metadata" aria-label="Bemutatóvideó Balázs Lilla weboldaláról"></video>
         </div>
-        <div class="stage" id="vidfb"><div class="phone"><div class="screen"><iframe class="live" src="lilla-elonezet/index.html" title="Balázs Lilla kozmetikus weboldala" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div></div>
+        <div class="stage" id="vidfb"><div class="phone"><div class="screen"><iframe class="live" src="lilla-elonezet/index.html" title="Balázs Lilla kozmetikus weboldala" loading="lazy" tabindex="-1" aria-hidden="true" scrolling="no"></iframe><div class="shield" aria-hidden="true"></div></div></div></div>
         <p class="caption">Így látja a vendég a telefonján</p>
       </div>
     </div>
@@ -649,7 +650,7 @@ for (const ifr of document.querySelectorAll(".screen .live")) {
   const fit = () => { const s = scr.clientWidth / 390; ifr.style.transform = `scale(${s})`; ifr.style.height = (scr.clientHeight / s) + "px"; };
   const roFit = new ResizeObserver(fit); roFit.observe(scr); fit();
   ifr.addEventListener("load", () => {
-    let w; try { w = ifr.contentWindow; w.document.documentElement.style.scrollBehavior = "auto"; } catch (_) { ifr.classList.add("on"); return; }
+    let w; try { w = ifr.contentWindow; w.document.documentElement.style.scrollBehavior = "auto"; const d = w.document; for (const el of [d.documentElement, d.body]) { el.style.overflow = "hidden"; el.style.touchAction = "none"; el.style.pointerEvents = "none"; } const st = d.createElement("style"); st.textContent = "::-webkit-scrollbar{display:none}html{scrollbar-width:none}"; d.head.appendChild(st); } catch (_) { ifr.classList.add("on"); return; }
     ifr.classList.add("on");
     if (SLOW) return;
     let y = 0, last = 0, pauseUntil = performance.now() + 1500;
