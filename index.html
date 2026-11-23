@@ -612,7 +612,7 @@ const CONFIG = {
     { id:"portre", name:"Portréretus", note:"3 kép, az oldalhoz és a profilokhoz", price:7990 },
     { id:"frissites", name:"3 tartalomfrissítés előre", note:"30\u00a0000\u00a0Ft helyett", price:24990 }
   ],
-  promo: { code: "REFERENCIA20", price: 20000, plans: ["alap"], label: "Referencia-ajánlat", payLater: true },
+  promo: { code: "REFERENCIA", price: 20000, plans: ["alap"], label: "Referencia-ajánlat", payLater: true },
   calenza: { month: 2990, setup: 10000 },   // setup: meglévő oldalhoz, külön
   update: 10000              // tartalomfrissítés / alkalom
 };
@@ -864,7 +864,7 @@ const render = () => {
       <div class="price-sum">
         <span>Fizetendő</span>
         <b>${pr ? `<s>${ft(p.price + addonSum())}</s> ` : ""}${ft(priceNow())}</b>
-        <small>${pr && CONFIG.promo.payLater ? "Előleg nincs: az összeget csak az átadás után kell kifizetnie." : p.stripe ? `Előleg most: ${ft(p.price/2)}, a többi az élesítéskor.` : "Az előlegről e-mailben küldök tájékoztatást."} A Calenza-foglalás díja ${ft(CONFIG.calenza.month)}/hó az élesítéstől.</small>
+        <small>${pr && CONFIG.promo.payLater ? "Előleg nincs: akkor fizet, amikor az oldal elkészült és tetszik Önnek. Ezután élesítjük a választott webcímen." : p.stripe ? `Előleg most: ${ft(p.price/2)}, a többi az élesítéskor.` : "Az előlegről e-mailben küldök tájékoztatást."} A Calenza-foglalás díja ${ft(CONFIG.calenza.month)}/hó az élesítéstől.</small>
       </div>
       <dl class="recap">${recap().map(([k,v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
       <p class="hint">A beküldés még nem jár fizetéssel.</p>`;
@@ -951,7 +951,7 @@ const finish = sent => {
   const mail = `mailto:${CONFIG.email}?subject=${encodeURIComponent(`Megrendelés: ${A.vallalkozas || ""} (${p.name})`)}&body=${encodeURIComponent(summaryText())}`;
   body.innerHTML = sent
     ? `<div class="done"><div class="ok">✓</div><h3>Megkaptam, ${esc((A.nev || "").split(" ").slice(-1)[0])}!</h3>
-       <p>Az első tervet akár 24 órán belül elküldöm a(z) ${esc(A.email)} címre. ${pr && CONFIG.promo.payLater ? `A ${ft(priceNow())}-ot csak az átadás után kell kifizetnie.` : payNow ? "Az előleg kifizetésével most le is foglalhatja az időpontot." : "Az előlegről e-mailben küldök tájékoztatást."}</p>
+       <p>Az első tervet akár 24 órán belül elküldöm a(z) ${esc(A.email)} címre. ${pr && CONFIG.promo.payLater ? `Előre nem kell fizetnie: a ${ft(priceNow())}-ot akkor rendezi, amikor az oldal elkészült és tetszik Önnek, ezután élesítjük a választott webcímen.` : payNow ? "Az előleg kifizetésével most le is foglalhatja az időpontot." : "Az előlegről e-mailben küldök tájékoztatást."}</p>
        ${payNow ? `<a class="btn gold" href="${p.stripe}" target="_blank" rel="noopener">Előleg fizetése kártyával · ${ft(p.price/2)}</a>` : ""}
        <button class="btn sec" type="button" id="w-close2">Bezárás</button></div>`
     : `<div class="done"><div class="ok">✉</div>
